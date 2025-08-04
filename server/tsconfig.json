@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    // ... 다른 옵션들
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true
+    // ... 다른 옵션들
+  }
+}
