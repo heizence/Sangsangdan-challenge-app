@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "@tanstack/react-query": "^5.84.1",
+    "@trpc/client": "^11.4.3",
+    "@trpc/react-query": "^11.4.3",
+    "@trpc/server": "^11.4.3",
+    "expo": "^53.0.20",
+    "expo-constants": "~17.1.7",
+    "expo-device": "~7.1.4",
+    "expo-notifications": "~0.31.4"
+  }
+}
