@@ -33,16 +33,14 @@ pnpm-debug.log*
 lerna-debug.log*
 
 # Environment variables
+# 👇 모든 .env 파일을 무시하도록 업데이트
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env.*.local
+.env.*
+.env*.local
+!.env.example
 
 # NestJS specific
-/dist
-/node_modules
+dist/
 
 # Next.js specific
 .next/
@@ -51,7 +49,6 @@ out/
 # Expo / React Native specific
 .expo/
 .expo-shared/
-npm-debug.log
 *.jks
 *.p8
 *.p12

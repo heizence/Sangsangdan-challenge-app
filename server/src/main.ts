@@ -1,32 +1,50 @@
-// server/src/main.ts
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
+import { join } from "path";
+import { JwtService } from "@nestjs/jwt";
+import { NestExpressApplication } from "@nestjs/platform-express";
 import * as trpcExpress from "@trpc/server/adapters/express";
-import { appRouter } from "./trpc/trpc.router";
-import { ChallengeService } from "./challenges/challenges.service";
-import { PushTokenService } from "./users/push-token.service";
+import { TrpcService } from "./trpc/trpc.service";
+import { createInnerTRPCContext } from "./trpc/trpc.context";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // CORS 활성화 (프론트엔드와 통신을 위해)
   app.enableCors();
+  app.useStaticAssets(join(__dirname, "..", "uploads"), {
+    prefix: "/uploads/",
+  });
 
-  // DI 컨테이너에서 각 서비스의 인스턴스를 가져옵니다.
-  const challengeService = app.get(ChallengeService);
-  const pushTokenService = app.get(PushTokenService);
-
-  // 가져온 서비스 인스턴스들을 appRouter에 전달합니다.
-  const router = appRouter(challengeService, pushTokenService);
+  // tRPC 설정
+  const trpcRouter = app.get(TrpcService).createRouter();
+  const jwtService = app.get(JwtService);
 
   app.use(
     `/trpc`,
     trpcExpress.createExpressMiddleware({
-      router: router,
+      router: trpcRouter,
+      // 모든 요청에 대해 컨텍스트를 생성하는 함수
+      createContext: (opts) => {
+        // 요청으로부터 기본 컨텍스트 생성
+        const innerContext = createInnerTRPCContext(opts);
+        // DI로 주입된 서비스를 추가하여 최종 컨텍스트 완성
+        return {
+          ...innerContext,
+          jwtService,
+        };
+      },
     })
   );
 
-  await app.listen(3000);
-  console.log(`🚀 Server listening on http://localhost:3000`);
+  // app.use(
+  //   `/trpc`,
+  //   trpcExpress.createExpressMiddleware({
+  //     router: trpcRouter,
+  //   })
+  // );
+
+  const port = process.env.PORT;
+  await app.listen(port);
+  console.log(`🚀 Server listening on ${process.env.ADDRESS}:${port}`);
 }
 bootstrap();

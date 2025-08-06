@@ -1,0 +1,484 @@
+openapi: 3.0.0
+
+# API 기본 정보
+info:
+  title: 상상단 챌린지 앱 API
+  description: NestJS와 tRPC로 구현된 상상단 챌린지 앱의 API 명세서입니다.
+  version: 1.0.0
+
+# 서버 정보
+servers:
+  - url: http://localhost:3000
+    description: 개발 서버
+
+# 재사용 가능한 컴포넌트 (데이터 모델) 정의
+components:
+  schemas:
+    # --- DTO 및 Entity 스키마 ---
+    User:
+      type: object
+      properties:
+        id: 
+          type: integer
+          description: 사용자 고유 ID
+        email: 
+          type: string
+          format: email 
+        nickname: 
+          type: string
+        createdAt: 
+          type: string
+          format: date-time
+        updatedAt: 
+          type: string
+          format: date-time
+
+    Challenge:
+      type: object
+      properties:
+        id: 
+          type: integer
+        title: 
+          type: string
+        thumbnail: 
+          type: string
+          format: url
+        frequency: 
+          type: string
+        startDate: 
+          type: string
+          format: date
+        endDate: 
+          type: string
+          format: date
+        authCountPerDay: 
+          type: string
+        authDescription: 
+          type: string
+        createdAt: 
+          type: string
+          format: date-time
+        updatedAt: 
+          type: string
+          format: date-time
+
+    ChallengeParticipation:
+      type: object
+      properties:
+        id: 
+          type: integer 
+        status: 
+          type: string 
+        user: 
+          $ref: "#/components/schemas/User" 
+        challenge: 
+          $ref: "#/components/schemas/Challenge" 
+        createdAt: 
+          type: string
+          format: date-time 
+          
+    Proof:
+      type: object
+      properties:
+        id: 
+          type: integer
+        content: 
+          type: string 
+        imageUrl: 
+          type: string
+          format: url 
+        createdAt: 
+          type: string
+          format: date-time 
+        user: 
+          $ref: '#/components/schemas/User' 
+        participation:
+          type: object
+          properties:
+            id: 
+              type: integer 
+            challenge: 
+              $ref: '#/components/schemas/Challenge' 
+
+    # --- 요청(Request) 스키마 ---
+    SignUpRequest:
+      type: object
+      required: [email, password, nickname]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        nickname:
+          type: string
+          minLength: 2
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    CreateChallengeRequest:
+      type: object
+      required: [title, thumbnail, frequency, startDate, endDate, authCountPerDay, authDescription]
+      properties:
+        title: 
+          type: string 
+        thumbnail: 
+          type: string
+          format: url 
+        frequency: 
+          type: string 
+        startDate: 
+          type: string
+          format: date 
+        endDate: 
+          type: string
+          format: date 
+        authCountPerDay: 
+          type: string 
+        authDescription: 
+          type: string 
+    UpdateChallengeRequest:
+      type: object
+      properties: 
+        title: 
+          type: string 
+        thumbnail: 
+          type: string
+          format: url 
+    CreateProofRequest:
+      type: object
+      required: [userId, participationId, imageUrl, content]
+      properties:
+        userId: 
+          type: integer 
+        participationId: 
+          type: integer 
+        content: 
+          type: string 
+        imageUrl: 
+          type: string
+          format: url 
+
+    # --- 응답(Response) 스키마 ---
+    LoginResponse:
+      type: object
+      properties:
+        access_token: 
+          type: string
+          description: JWT 액세스 토큰 
+    UploadImageResponse:
+      type: object
+      properties:
+        imageUrl: 
+          type: string
+          format: url 
+    SuccessResponse:
+      type: object
+      properties:
+        success: 
+          type: boolean
+          example: true 
+
+# API 엔드포인트 정의
+paths:
+  # =============================================
+  #           사용자 인증 (Auth)
+  # =============================================
+  /trpc/auth.signUp:
+    post:
+      summary: 회원가입
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignUpRequest"
+      responses:
+        "200":
+          description: 회원가입 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /trpc/auth.login:
+    post:
+      summary: 로그인
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: 로그인 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: 인증 실패
+
+  # =============================================
+  #           챌린지 (Challenge)
+  # =============================================
+  # 공용
+  /trpc/challenge.getAll:
+    get:
+      summary: 챌린지 목록 조회
+      tags: [Challenge]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: filter
+          in: query
+          schema:
+            type: string
+            enum: [all, recruiting, upcoming, ended]
+            default: all
+      responses:
+        "200":
+          description: 챌린지 목록
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Challenge"
+
+  # 공용
+  /trpc/challenge.getById:
+    get:
+      summary: 챌린지 상세 조회
+      tags: [Challenge]
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 챌린지 상세 정보
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Challenge"
+        "404":
+          description: 챌린지를 찾을 수 없음
+
+  # 사용자 전용
+  /trpc/challenge.join: 
+    post:
+      summary: 챌린지 참여하기
+      tags: [Challenge]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: integer
+                challengeId:
+                  type: integer
+      responses:
+        "200":
+          description: 참여 성공
+        /trpc/admin.challenge.create:
+    post:
+      summary: (관리자) 챌린지 생성
+      tags: [Admin]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Challenge" # CreateChallengeDto
+      responses:
+        "201":
+          description: 생성 성공
+
+  # 관리자 전용
+  /trpc/admin.challenge.update:
+    post:
+      summary: (관리자) 챌린지 수정
+      tags: [Admin]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/Challenge" # UpdateChallengeDto
+                - type: object
+                  properties:
+                    id:
+                      type: integer
+      responses:
+        "200":
+          description: 수정 성공
+
+  # 관리자 전용
+  /trpc/admin.challenge.delete:
+    post:
+      summary: (관리자) 챌린지 삭제
+      tags: [Admin]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+      responses:
+        "200":
+          description: 삭제 성공
+
+  # =============================================
+  #           인증 피드 (Proof)
+  # =============================================
+  /trpc/proof.create:
+    post:
+      summary: 인증 피드 생성
+      tags: [Proof]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProofRequest"
+      responses:
+        "200":
+          description: 인증 성공
+
+  /trpc/proof.getAll:
+    get:
+      summary: 전체 인증 피드 목록 조회
+      tags: [Proof]
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: 인증 피드 목록
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Proof'
+
+  /trpc/proof.getById:
+    get:
+      summary: 인증 피드 상세 조회
+      tags: [Proof]
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 인증 피드 상세 정보
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Proof'
+        '404':
+          description: 인증 피드를 찾을 수 없음
+
+  # =============================================
+  #           이미지 업로드
+  # =============================================
+  /uploads/image:
+    post:
+      summary: 이미지 업로드
+      tags: [Upload]
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: 업로드 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imageUrl:
+                    type: string
+                    format: url
+
+  # =============================================
+  #           마이페이지 (My)
+  # =============================================
+  /trpc/my.getChallenges:
+    get:
+      summary: 내가 참여한 챌린지 목록 조회
+      tags: [MyPage]
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 참여중인 챌린지 목록
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChallengeParticipation"
+
+  /trpc/my.getProofs:
+    get:
+      summary: 내 인증 내역 조회
+      tags: [MyPage]
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 내 인증 피드 목록
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChallengeProof"
+
+

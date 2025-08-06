@@ -1,27 +1,32 @@
-// server/src/app.module.ts
 import { Module } from "@nestjs/common";
-import { TypeOrmModule } from "@nestjs/typeorm";
-import { ScheduleModule } from "@nestjs/schedule";
 import { ConfigModule } from "@nestjs/config";
-import { ChallengeModule } from "./challenges/challenges.module";
+import { TypeOrmModule } from "@nestjs/typeorm";
 import { UsersModule } from "./users/users.module";
-import { NotificationsModule } from "./notifications/notifications.module";
+import { ChallengesModule } from "./challenges/challenges.module";
+import { AuthModule } from "./auth/auth.module";
+import { TrpcModule } from "./trpc/trpc.module";
+
+import { User } from "./users/entities/user.entity";
+import { Challenge } from "./challenges/entities/challenge.entity";
+import { ChallengeParticipation } from "./challenges/entities/challenge-participation.entity";
+import { Proof } from "./proofs/entities/proof.entity";
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // 전역적으로 .env 파일 사용
+      envFilePath: process.env.NODE_ENV === "production" ? ".env.production" : ".env.development",
+      isGlobal: true,
     }),
-    ScheduleModule.forRoot(),
     TypeOrmModule.forRoot({
       type: "sqlite",
       database: "data/assignment.sqlite",
-      entities: [__dirname + "/**/*.entity{.ts,.js}"],
-      synchronize: true, // 개발용
+      entities: [User, Challenge, ChallengeParticipation, Proof],
+      synchronize: true, // 개발용. DB와 엔티티를 자동으로 동기화
     }),
-    ChallengeModule,
     UsersModule,
-    NotificationsModule,
+    ChallengesModule,
+    AuthModule,
+    TrpcModule,
   ],
 })
 export class AppModule {}

@@ -1,11 +1,12 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { ChallengeService } from "./challenges.service";
-import { Challenge } from "./challenge.entity";
+import { Challenge } from "./entities/challenge.entity";
+import { ChallengeParticipation } from "./entities/challenge-participation.entity";
+import { ChallengesService } from "./challenges.service";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Challenge])],
-  providers: [ChallengeService],
-  exports: [ChallengeService],
+  imports: [TypeOrmModule.forFeature([Challenge, ChallengeParticipation])],
+  providers: [ChallengesService],
+  exports: [ChallengesService],
 })
-export class ChallengeModule {}
+export class ChallengesModule {}
