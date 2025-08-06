@@ -10,9 +10,9 @@ const createChallengeSchema = z.object({
   title: z.string().min(1),
   thumbnail: z.string().url(),
   frequency: z.string(),
-  startDate: z.date(),
-  endDate: z.date(),
-  authCountPerDay: z.number(),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date(),
+  authCountPerDay: z.string(),
   authDescription: z.string(),
 });
 
@@ -36,8 +36,7 @@ export function appRouter(
   const publicProcedure = t.procedure; // 인증이 필요 없는 프로시저
   const router = t.router;
 
-  // 인증 확인 미들웨어
-  // 이 미들웨어는 요청 헤더의 JWT를 검증하여 user 객체를 컨텍스트에 추가합니다.
+  // 앱 인증 확인 미들웨어
   const isAuthed = t.middleware(async ({ ctx, next }) => {
     const authHeader = ctx.req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -45,8 +44,8 @@ export function appRouter(
     }
     const token = authHeader.split(" ")[1];
     try {
-      const payload = await ctx.jwtService.verifyAsync(token, { secret: process.env.JWT_SECRET }); // .env에서 관리
-      ctx.user = { userId: payload.sub, email: payload.email };
+      const payload = await ctx.jwtService.verifyAsync(token, { secret: process.env.JWT_SECRET });
+      ctx.user = { userId: payload.sub, email: payload.email, role: payload.role };
     } catch {
       throw new TRPCError({ code: "UNAUTHORIZED" });
     }
@@ -58,12 +57,19 @@ export function appRouter(
     });
   });
 
-  // 4. 인증된 사용자만 접근할 수 있는 프로시저 생성
+  // 관리자 역할(role)을 확인하는 미들웨어
+  const isAdmin = isAuthed.unstable_pipe(async ({ ctx, next }) => {
+    if (ctx.user.role !== "admin") {
+      throw new TRPCError({ code: "FORBIDDEN", message: "관리자 권한이 필요합니다." });
+    }
+    return next({ ctx });
+  });
+
+  // 인증된 사용자만 접근할 수 있는 프로시저 생성
   const protectedProcedure = t.procedure.use(isAuthed);
 
-  // 5. (예시) 관리자만 접근할 수 있는 프로시저 생성
-  // 실제로는 user 객체에 role: 'admin' 같은 속성이 있는지 확인하는 로직이 추가되어야 합니다.
-  const adminProcedure = t.procedure.use(isAuthed);
+  // 관리자만 접근할 수 있는 프로시저 생성
+  const adminProcedure = t.procedure.use(isAdmin);
 
   return router({
     // --- 사용자 인증 라우터 ---

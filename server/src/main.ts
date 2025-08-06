@@ -36,13 +36,6 @@ async function bootstrap() {
     })
   );
 
-  // app.use(
-  //   `/trpc`,
-  //   trpcExpress.createExpressMiddleware({
-  //     router: trpcRouter,
-  //   })
-  // );
-
   const port = process.env.PORT;
   await app.listen(port);
   console.log(`🚀 Server listening on ${process.env.ADDRESS}:${port}`);

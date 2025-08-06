@@ -18,7 +18,7 @@ export class CreateChallengeDto {
   endDate: Date;
 
   @IsEnum(["ONCE", "MULTIPLE"])
-  authCountPerDay: number;
+  authCountPerDay: string;
 
   @IsString()
   @IsNotEmpty()

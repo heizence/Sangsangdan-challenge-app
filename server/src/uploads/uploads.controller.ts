@@ -1,11 +1,13 @@
-import { Controller, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Controller, Post, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { diskStorage } from "multer";
 import { extname } from "path";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
 @Controller("uploads")
 export class UploadsController {
   @Post("image")
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(
     FileInterceptor("image", {
       // 'image'는 클라이언트에서 보내는 필드 이름

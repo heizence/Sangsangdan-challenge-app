@@ -4,6 +4,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { UsersModule } from "./users/users.module";
 import { ChallengesModule } from "./challenges/challenges.module";
 import { AuthModule } from "./auth/auth.module";
+import { UploadsModule } from "./uploads/uploads.module";
 import { TrpcModule } from "./trpc/trpc.module";
 
 import { User } from "./users/entities/user.entity";
@@ -25,6 +26,7 @@ import { Proof } from "./proofs/entities/proof.entity";
     }),
     UsersModule,
     ChallengesModule,
+    UploadsModule,
     AuthModule,
     TrpcModule,
   ],

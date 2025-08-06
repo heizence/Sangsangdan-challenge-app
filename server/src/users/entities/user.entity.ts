@@ -23,6 +23,10 @@ export class User {
   @Column()
   nickname: string;
 
+  // 👇 사용자 역할을 구분하는 컬럼 (기본값: 'user')
+  @Column({ type: "varchar", default: "user" })
+  role: "user" | "admin";
+
   @OneToMany(() => ChallengeParticipation, (participation) => participation.user)
   participations: ChallengeParticipation[];
 

@@ -29,7 +29,7 @@ export class Challenge {
   endDate: Date;
 
   @Column()
-  authCountPerDay: number;
+  authCountPerDay: string;
 
   @Column("text")
   authDescription: string;
