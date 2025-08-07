@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "sangsangdan-app",
+    "slug": "sangsangdan-app",
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#ffffff"
+        }
+      ]
+    ],
+    "android": {
+      "package": "com.sangsangdan.app",
+      "useNextNotificationsApi": true,
+      "permissions": ["CAMERA"],
+      "usesCleartextTraffic": true
+    },
+    "ios": {
+      "bundleIdentifier": "com.sangsangdan.app",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "챌린지 인증을 위해 카메라 접근 권한이 필요합니다."
+      }
+    }
+  }
+}
