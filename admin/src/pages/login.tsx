@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useRouter } from "next/router";
 import { useAuth } from "../context/AuthContext";
 import { trpc } from "../utils/trpc";
 
