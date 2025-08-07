@@ -90,7 +90,9 @@ npm install
 
 #### 4. 환경변수 생성
 
-각 프로젝트 폴더(server, admin, mobile)에 있는 .env.example 파일을 복사하여 .env 파일을 생성하고, 필요한 환경변수 값을 설정합니다.
+각 프로젝트 폴더(server, admin, mobile)에 있는 .env.example 파일을 복사하여 .env.development 파일을 생성하고, 필요한 환경변수 값을 설정합니다.
+
+***모바일 앱은 .env 로 생성해야 합니다.**
 
 #### 5. 각 파트별 실행
 
