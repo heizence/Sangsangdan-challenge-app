@@ -21,6 +21,7 @@ export class UsersService {
     const adminEmail = this.configService.get<string>("ADMIN_EMAIL");
     const adminExists = await this.findUserByEmail(adminEmail);
 
+    // 관리자 계정 생성
     if (!adminExists) {
       console.log("초기 관리자 계정을 생성합니다...");
       const adminPassword = this.configService.get<string>("ADMIN_PASSWORD");
@@ -33,6 +34,28 @@ export class UsersService {
       };
       await this.createUser(adminData);
       console.log(`관리자 계정 생성 완료 (Email: ${adminEmail})`);
+    }
+
+    // 👇 테스트용 일반 사용자 계정 5개 생성
+    const testUsers = [
+      { email: "user1@example.com", nickname: "열정맨" },
+      { email: "user2@example.com", nickname: "걷기왕" },
+      { email: "user3@example.com", nickname: "독서광" },
+      { email: "user4@example.com", nickname: "미라클모닝" },
+      { email: "user5@example.com", nickname: "갓생러" },
+    ];
+
+    for (const userData of testUsers) {
+      const userExists = await this.findUserByEmail(userData.email);
+      if (!userExists) {
+        console.log(`${userData.nickname} 테스트 계정을 생성합니다...`);
+        await this.createUser({
+          ...userData,
+          password: "password123", // 모든 테스트 계정의 비밀번호는 동일
+          role: "user" as "user",
+        });
+        console.log(`${userData.nickname} 계정 생성 완료 (Email: ${userData.email})`);
+      }
     }
   }
 

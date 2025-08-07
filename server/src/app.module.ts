@@ -11,6 +11,7 @@ import { User } from "./users/entities/user.entity";
 import { Challenge } from "./challenges/entities/challenge.entity";
 import { ChallengeParticipation } from "./challenges/entities/challenge-participation.entity";
 import { Proof } from "./proofs/entities/proof.entity";
+import { ProofsModule } from "./proofs/proofs.module";
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { Proof } from "./proofs/entities/proof.entity";
     }),
     UsersModule,
     ChallengesModule,
+    ProofsModule,
     UploadsModule,
     AuthModule,
     TrpcModule,

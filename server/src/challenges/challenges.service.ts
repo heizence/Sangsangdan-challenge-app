@@ -84,7 +84,7 @@ export class ChallengesService {
   async findMyChallenges(userId: number): Promise<ChallengeParticipation[]> {
     return this.participationsRepository.find({
       where: { user: { id: userId } },
-      relations: ["challenge"], // 참여 정보와 함께 챌린지 정보도 가져오기
+      relations: ["challenge", "proofs"],
     });
   }
 }

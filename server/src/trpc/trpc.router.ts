@@ -75,14 +75,6 @@ export function appRouter(
     // --- 사용자 인증 라우터 ---
     auth: router({
       signUp: publicProcedure
-        .meta({
-          openapi: {
-            method: "POST",
-            path: "/auth/signup",
-            tags: ["Auth"],
-            summary: "회원가입",
-          },
-        })
         .input(
           z.object({
             email: z.string().email("올바른 이메일 형식이 아닙니다."),
@@ -96,14 +88,6 @@ export function appRouter(
         }),
 
       login: publicProcedure
-        .meta({
-          openapi: {
-            method: "POST",
-            path: "/auth/login",
-            tags: ["Auth"],
-            summary: "로그인",
-          },
-        })
         .input(z.object({ email: z.string().email(), password: z.string() }))
         .mutation(async ({ input }) => {
           const user = await authService.validateUser(input.email, input.password);
@@ -120,14 +104,6 @@ export function appRouter(
     // --- 챌린지 탐색 및 참여 라우터 ---
     challenge: router({
       getAll: publicProcedure
-        .meta({
-          openapi: {
-            method: "GET",
-            path: "/challenges",
-            tags: ["Challenge"],
-            summary: "챌린지 목록 조회",
-          },
-        })
         .input(
           z.object({
             page: z.number().min(1).default(1),
@@ -141,47 +117,32 @@ export function appRouter(
         }),
 
       getById: publicProcedure
-        .meta({
-          openapi: {
-            method: "GET",
-            path: "/challenges/{id}",
-            tags: ["Challenge"],
-            summary: "챌린지 상세 조회",
-          },
-        })
         .input(z.object({ id: z.number() }))
         .query(({ input }) => challengesService.findChallengeById(input.id)),
 
       join: protectedProcedure
-        .input(z.object({ userId: z.number(), challengeId: z.number() }))
-        .mutation(({ input }) => challengesService.joinChallenge(input.userId, input.challengeId)),
+        .input(z.object({ challengeId: z.number() }))
+        .mutation(({ input, ctx }) =>
+          challengesService.joinChallenge(ctx.user.userId, input.challengeId)
+        ),
     }),
 
     // --- 인증 피드 라우터 ---
     proof: router({
-      create: publicProcedure
+      create: protectedProcedure
         .input(
-          z.object({
-            userId: z.number(),
-            participationId: z.number(),
-            content: z.string(),
-            imageUrl: z.string().url(),
-          })
+          z.object({ participationId: z.number(), content: z.string(), imageUrl: z.string().url() })
         )
-        .mutation(({ input }) => {
-          const { userId, participationId, content, imageUrl } = input;
-          return proofsService.createProof({ userId, participationId, content, imageUrl });
-        }),
+        .mutation(({ input, ctx }) =>
+          proofsService.createProof({
+            userId: ctx.user.userId,
+            participationId: input.participationId,
+            content: input.content,
+            imageUrl: input.imageUrl,
+          })
+        ),
 
       getAll: publicProcedure
-        .meta({
-          openapi: {
-            method: "GET",
-            path: "/proofs",
-            tags: ["Proof"],
-            summary: "전체 인증 피드 목록 조회",
-          },
-        })
         .input(
           z.object({
             page: z.number().min(1).default(1),
@@ -194,62 +155,31 @@ export function appRouter(
         }),
 
       getById: publicProcedure
-        .meta({
-          openapi: {
-            method: "GET",
-            path: "/proofs/{id}",
-            tags: ["Proof"],
-            summary: "인증 피드 상세 조회",
-          },
-        })
         .input(z.object({ id: z.number() }))
         .query(({ input }) => proofsService.findProofById(input.id)),
     }),
 
     // --- 마이페이지 라우터 ---
     my: router({
-      getChallenges: protectedProcedure // TODO: 인증된 사용자만 조회하도록 변경 필요
-        .meta({
-          openapi: {
-            method: "GET",
-            path: "/my/challenges",
-            tags: ["MyPage"],
-            summary: "내가 참여한 챌린지 조회",
-          },
-        })
-        .input(z.object({ userId: z.number() }))
-        .query(({ input }) => challengesService.findMyChallenges(input.userId)),
+      getProfile: protectedProcedure.query(({ ctx }) =>
+        authService.getUserProfile(ctx.user.userId)
+      ),
 
-      getProofs: protectedProcedure // TODO: 인증된 사용자만 조회하도록 변경 필요
-        .meta({
-          openapi: {
-            method: "GET",
-            path: "/my/proofs",
-            tags: ["MyPage"],
-            summary: "내 인증 내역 조회",
-          },
-        })
-        .input(z.object({ userId: z.number() }))
-        .query(({ input }) => proofsService.findMyProofs(input.userId)),
+      getChallenges: protectedProcedure.query(({ ctx }) =>
+        challengesService.findMyChallenges(ctx.user.userId)
+      ),
+
+      getProofs: protectedProcedure.query(({ ctx }) => proofsService.findMyProofs(ctx.user.userId)),
     }),
 
     // --- 관리자 페이지 전용 라우터 ---
     admin: router({
       challenge: router({
-        // TODO: 관리자 권한 미들웨어 추가 필요
         create: adminProcedure
           .input(createChallengeSchema)
           .mutation(({ input }) => challengesService.createChallenge(input)),
 
         update: adminProcedure
-          .meta({
-            openapi: {
-              method: "PATCH",
-              path: "/admin/challenges/{id}",
-              tags: ["Admin"],
-              summary: "(관리자) 챌린지 수정",
-            },
-          })
           .input(updateChallengeSchema.extend({ id: z.number() }))
           .mutation(({ input }) => {
             const { id, ...updateData } = input;
@@ -257,14 +187,6 @@ export function appRouter(
           }),
 
         delete: adminProcedure
-          .meta({
-            openapi: {
-              method: "DELETE",
-              path: "/admin/challenges/{id}",
-              tags: ["Admin"],
-              summary: "(관리자) 챌린지 삭제",
-            },
-          })
           .input(z.object({ id: z.number() }))
           .mutation(({ input }) => challengesService.deleteChallenge(input.id)),
       }),
